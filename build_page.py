@@ -105,6 +105,11 @@ h2 {{ margin: 0 0 12px; font-size: 13px; font-weight: 800; letter-spacing: 0.08e
 .upd span {{ font-size: 14px; color: var(--ink); }}
 .upd small {{ grid-column: 2; font-size: 12px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; }}
 .quiet {{ font-size: 15px; font-weight: 600; color: var(--muted); }}
+.more {{ display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1.5px dashed var(--nav-border); }}
+.pill {{ position: relative; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: var(--headline-ink); }}
+.pill .btn-svg {{ position: absolute; inset: -6px; pointer-events: none; }}
+.pill-in {{ position: relative; display: inline-block; padding: 9px 18px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; color: #fff; background: var(--brand-blue); border-radius: 999px; }}
+.more-cap {{ font-size: 13px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; }}
 .foot {{ margin-top: 28px; font-size: 14px; font-weight: 600; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }}
 .foot a {{ color: var(--brand-blue); text-decoration: none; font-weight: 800; }}
 @media (max-width: 480px) {{ .page {{ padding: 24px 16px 64px; }} h1 {{ font-size: 26px; }} .banner-title {{ font-size: 20px; }} .days {{ gap: 2px; }} .upd {{ grid-template-columns: 1fr; padding-left: 0; }} .upd small {{ grid-column: 1; }} }}
@@ -159,22 +164,35 @@ function render() {
       + '<div class="days-cap"><span>30 days ago</span><b>' + (pct === null ? "no checks yet" : pct + "% uptime over " + seen + (seen === 1 ? " day" : " days")) + '</b><span>today</span></div></div>';
   });
   document.getElementById("services").innerHTML = rows;
-  // the last fourteen days, newest first — each day its incidents, or the line that it had none
-  var html = "", byStart = {};
+  // the last SEVEN days, newest first — each day its incidents, or the line that it had none;
+  // "Show the week before" pages back seven at a time, as far as the 30 days of history go
+  // (owner note on the review board, 2026-10-16: paginate, show the current week)
+  var byStart = {};
   inc.forEach(function (x) { var k = localDay(x.started); (byStart[k] = byStart[k] || []).push(x); });
-  for (var d = 0; d < 14; d++) {
+  function dayBlock(d) {
     var dt = new Date(Date.now() - d * 864e5), k = localDay(dt.toISOString()), list = (byStart[k] || []).slice().reverse();
-    html += '<div class="dayblk"><div class="dayhd">' + esc(dateHd(dt)) + '</div>';
-    if (!list.length) html += '<p class="none">' + (d === 0 ? "No incidents reported today." : "No incidents reported.") + '</p>';
+    var h = '<div class="dayblk"><div class="dayhd">' + esc(dateHd(dt)) + '</div>';
+    if (!list.length) h += '<p class="none">' + (d === 0 ? "No incidents reported today." : "No incidents reported.") + '</p>';
     list.forEach(function (x) {
-      html += '<div class="inc"><div class="inc-title' + (x.ended ? " over" : "") + '"><span class="coin" aria-hidden="true">' + coinSVG(x.ended ? YARN.up : YARN.down, 700 + d) + '</span>' + esc(x.name) + (x.ended ? " outage" : " is down") + '</div><div class="upd">';
-      if (x.ended) html += '<b>Recovered</b><span>' + esc(x.name) + ' answered again, after about ' + esc(dur(x.started, x.ended)) + '.</span><small>' + esc(dateHd(new Date(x.ended))) + ', ' + esc(clock(x.ended)) + '</small>';
-      else html += '<b>Ongoing</b><span>Still down, ' + esc(dur(x.started)) + ' so far. Checked again every ' + st.every_minutes + ' minutes.</span><small>' + esc(dateHd(new Date())) + ', ' + esc(clock(new Date().toISOString())) + '</small>';
-      html += '<b>Detected</b><span>' + esc(x.note ? x.note + " on two checks in a row." : "No answer on two checks in a row.") + '</span><small>' + esc(dateHd(new Date(x.started))) + ', ' + esc(clock(x.started)) + '</small></div></div>';
+      h += '<div class="inc"><div class="inc-title' + (x.ended ? " over" : "") + '"><span class="coin" aria-hidden="true">' + coinSVG(x.ended ? YARN.up : YARN.down, 700 + d) + '</span>' + esc(x.name) + (x.ended ? " outage" : " is down") + '</div><div class="upd">';
+      if (x.ended) h += '<b>Recovered</b><span>' + esc(x.name) + ' answered again, after about ' + esc(dur(x.started, x.ended)) + '.</span><small>' + esc(dateHd(new Date(x.ended))) + ', ' + esc(clock(x.ended)) + '</small>';
+      else h += '<b>Ongoing</b><span>Still down, ' + esc(dur(x.started)) + ' so far. Checked again every ' + st.every_minutes + ' minutes.</span><small>' + esc(dateHd(new Date())) + ', ' + esc(clock(new Date().toISOString())) + '</small>';
+      h += '<b>Detected</b><span>' + esc(x.note ? x.note + " on two checks in a row." : "No answer on two checks in a row.") + '</span><small>' + esc(dateHd(new Date(x.started))) + ', ' + esc(clock(x.started)) + '</small></div></div>';
     });
-    html += '</div>';
+    return h + '</div>';
   }
-  document.getElementById("incidents").innerHTML = html;
+  var PAGE = 7, MAXD = 30, shown = S.shownDays || PAGE, html = "";
+  for (var d = 0; d < Math.min(shown, MAXD); d++) html += dayBlock(d);
+  var box = document.getElementById("incidents"); box.innerHTML = html;
+  var more = document.getElementById("more");
+  if (shown < MAXD) {
+    var left = Math.min(PAGE, MAXD - shown);
+    more.innerHTML = '<button type="button" class="pill" data-seed="9777"><span class="btn-svg"></span><span class="pill-in">Show the week before</span></button><span class="more-cap">' + (shown) + ' of ' + MAXD + ' days shown</span>';
+    more.querySelector("button").addEventListener("click", function () { S.shownDays = shown + left; render(); });
+    sketch(more.querySelector(".pill"));
+  } else {
+    more.innerHTML = '<span class="more-cap">All ' + MAXD + ' days of history shown.</span>';
+  }
   document.querySelectorAll(".card.sk").forEach(sketch);
 }
 function themeInit() {
@@ -224,7 +242,7 @@ HTML = f"""<!doctype html>
   <section id="banner" class="card banner" data-seed="9701"><span class="btn-svg"></span></section>
   <p id="checked" class="checked"></p>
   <section class="card sk" data-seed="9702" data-radius="20"><span class="btn-svg"></span><h2>Components</h2><div id="services"></div></section>
-  <section class="card sk" data-seed="9703" data-radius="20"><span class="btn-svg"></span><h2>Past incidents</h2><div id="incidents"></div></section>
+  <section class="card sk" data-seed="9703" data-radius="20"><span class="btn-svg"></span><h2>Past incidents</h2><div id="incidents"></div><div id="more" class="more"></div></section>
   <footer class="foot"><a href="https://triotheo.com/">&larr; triotheo.com</a><span>Checked from GitHub&rsquo;s runners and served from GitHub Pages, so this page stays up when the site does not.</span></footer>
 </main>
 <script>{PEN}</script>
