@@ -1,0 +1,54 @@
+name: uptime
+
+# Probe triotheo.com from GitHub's runners and keep the status page's data (check.py).
+# Every 10 minutes — each run is a few seconds, and on a public repo the minutes are free.
+# The page itself is served by GitHub Pages from this branch, so it stays up when the box does not.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe the site
+        # stdlib only; writes status.json / history.json / incidents.json, and notify.txt only
+        # when a service changed state (down after two consecutive failed runs; back at once)
+        run: python3 check.py "${{ vars.STATUS_HOST || 'status.triotheo.com' }}"
+
+      - name: Say it on Discord, if there is anything to say
+        if: hashFiles('notify.txt') != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then
+            echo "::warning::notify.txt was written but DISCORD_WEBHOOK is not set — nobody was told:"; cat notify.txt; exit 0
+          fi
+          python3 - <<'PY'
+          import json, os, urllib.request
+          body = json.dumps({"flags": 4, "content": open("notify.txt").read()[:1900]}).encode()
+          req = urllib.request.Request(os.environ["DISCORD_WEBHOOK"], data=body, headers={"Content-Type": "application/json"})
+          with urllib.request.urlopen(req, timeout=15) as r: print("discord:", r.status)
+          PY
+          rm -f notify.txt
+
+      - name: Record the check
+        # one commit per run keeps the history honest; the page reads these files straight off Pages
+        run: |
+          git config user.name "triotheo-status"
+          git config user.email "status@triotheo.com"
+          git add status.json history.json incidents.json
+          git diff --cached --quiet && { echo "nothing changed"; exit 0; }
+          git commit -q -m "check: $(python3 -c "import json;s=json.load(open('status.json'));print(s['overall'],s['checked_at'])")"
+          git push
