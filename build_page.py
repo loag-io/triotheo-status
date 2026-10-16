@@ -52,8 +52,8 @@ body {{
 }}
 a {{ color: inherit; }}
 .page {{ max-width: 760px; margin: 0 auto; padding: 36px 20px 80px; }}
-.brand {{ display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }}
-.mark {{ width: 56px; height: 56px; flex: none; }}
+.brand {{ display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }}
+.mark {{ width: 48px; height: 48px; flex: none; }}
 .mark img {{ width: 100%; height: 100%; display: block; }}
 .mark .dark {{ display: none; }}
 @media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) .mark .light {{ display: none; }} :root:not([data-theme="light"]) .mark .dark {{ display: block; }} }}
@@ -62,12 +62,18 @@ a {{ color: inherit; }}
 h1 {{ margin: 0; font-size: 30px; font-weight: 800; letter-spacing: 0.05em; line-height: 1.15; color: var(--headline-ink); text-wrap: balance; }}
 .sub {{ margin: 4px 0 0; font-size: 15px; font-weight: 600; color: var(--muted); }}
 .brand-text {{ min-width: 0; flex: 1; }}
-.theme {{ flex: none; width: 44px; height: 44px; border: 0; background: none; padding: 0; cursor: pointer; position: relative; color: color-mix(in srgb, var(--toggle-coin) 60%, #000); }}
-.theme .btn-svg, .coin .btn-svg {{ position: absolute; inset: 0; pointer-events: none; }}
+/* THE HEADER IS THE SETTINGS PAGE'S ROW (owner ask 2026-10-16): a back coin on the left, the title, and the
+   theme coin where the gear sits — both coins the profile header's own 54px (CoinBack's box), the back coin in
+   CoinBack's dress (seed 9021 ghost in blue, ring 78% to black, chevron 60%), the theme coin in the toggle yarn */
+.hcoin {{ flex: none; width: 54px; height: 54px; border: 0; background: none; padding: 0; cursor: pointer; position: relative; display: grid; place-items: center; text-decoration: none; }}
+.hcoin .btn-svg {{ position: absolute; inset: 0; pointer-events: none; }}
+.hcoin svg.glyph {{ position: relative; width: 32px; height: 32px; }}
+.theme {{ color: color-mix(in srgb, var(--toggle-coin) 60%, #000); }}
+.back {{ color: color-mix(in srgb, var(--brand-blue) 60%, #000); }}
+.coin .btn-svg {{ position: absolute; inset: 0; pointer-events: none; }}
 /* the pen draws a card into a viewBox padded 6px on every side; the SVG's box is padded the same
    or `meet` fits the taller viewBox to a wide card's height and shrinks its width (measured) */
 .card .btn-svg {{ position: absolute; inset: -6px; pointer-events: none; }}
-.theme svg.glyph {{ position: absolute; inset: 0; margin: auto; width: 20px; height: 20px; }}
 .card {{ position: relative; padding: 18px 20px; margin-bottom: 18px; }}
 .card > :not(.btn-svg) {{ position: relative; }}
 h2 {{ margin: 0 0 12px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label-purple); }}
@@ -195,6 +201,17 @@ function render() {
   }
   document.querySelectorAll(".card.sk").forEach(sketch);
 }
+// CoinBack, as the Learn app draws it: a ghost coin at seed 9021 in the family yarn, the ring the yarn's 78%
+// dark variant, the chevron DoodleChevronLeft's own points at its own seed (9601, amp 0.35) in the 60% mark
+var CHEV_L = wobblePath([[14.6, 5.4], [11.2, 8.7], [7.8, 12], [11.2, 15.3], [14.6, 18.6]], 9601, 0.35);
+function backInit() {
+  var a = document.getElementById("back"), yarn = "var(--brand-blue)", ring = "color-mix(in srgb, " + yarn + " 78%, #000000)";
+  var box = 68, r = 26;
+  a.querySelector(".btn-svg").innerHTML = '<svg viewBox="0 0 ' + box + ' ' + box + '" aria-hidden="true" style="' + SVG_STYLE + '">'
+    + '<path d="' + jitterCircle(r, box, 9021 + 3, 1.3) + '" fill="' + yarn + '" transform="translate(3.2 2.8)"/>'
+    + '<path d="' + jitterCircle(r, box, 9021, 1.6) + '" fill="none" stroke="' + ring + '" stroke-width="2.6" stroke-linecap="round"/></svg>';
+  a.querySelector(".glyph").innerHTML = '<path d="' + CHEV_L + '" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+}
 function themeInit() {
   var t = null; try { t = localStorage.getItem("triotheo-status-theme"); } catch (e) {}
   if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
@@ -217,7 +234,7 @@ function load() {
         if (!S.status) { document.getElementById("banner").innerHTML = '<p class="quiet">No check has run yet.</p>'; document.querySelectorAll(".card.sk").forEach(sketch); return; }
         render(); }); });
 }
-themeInit(); load(); setInterval(load, 120000);
+backInit(); themeInit(); load(); setInterval(load, 120000);
 """
 
 HTML = f"""<!doctype html>
@@ -235,15 +252,16 @@ HTML = f"""<!doctype html>
 <body>
 <main class="page">
   <header class="brand">
+    <a id="back" class="hcoin back" href="https://triotheo.com/" aria-label="Back to triotheo.com" title="Back to triotheo.com"><span class="btn-svg"></span><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"></svg></a>
     <span class="mark" aria-hidden="true"><img class="light" alt="" src="{uri(MARK, 'image/svg+xml')}"><img class="dark" alt="" src="{uri(MARK_DARK, 'image/svg+xml')}"></span>
     <div class="brand-text"><span class="eyebrow">TrioTheo</span><h1>Status</h1><p class="sub">Is triotheo.com up right now?</p></div>
-    <button id="theme" class="theme" type="button" aria-label="Switch theme"><span class="btn-svg"></span><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"></svg></button>
+    <button id="theme" class="hcoin theme" type="button" aria-label="Switch theme"><span class="btn-svg"></span><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"></svg></button>
   </header>
   <section id="banner" class="card banner" data-seed="9701"><span class="btn-svg"></span></section>
   <p id="checked" class="checked"></p>
   <section class="card sk" data-seed="9702" data-radius="20"><span class="btn-svg"></span><h2>Components</h2><div id="services"></div></section>
   <section class="card sk" data-seed="9703" data-radius="20"><span class="btn-svg"></span><h2>Past incidents</h2><div id="incidents"></div><div id="more" class="more"></div></section>
-  <footer class="foot"><a href="https://triotheo.com/">&larr; triotheo.com</a><span>Checked from GitHub&rsquo;s runners and served from GitHub Pages, so this page stays up when the site does not.</span></footer>
+  <footer class="foot"><span>Checked from GitHub&rsquo;s runners and served from GitHub Pages, so this page stays up when the site does not.</span></footer>
 </main>
 <script>{PEN}</script>
 <script>{JS}</script>
