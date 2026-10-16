@@ -111,11 +111,13 @@ h2 {{ margin: 0 0 12px; font-size: 13px; font-weight: 800; letter-spacing: 0.08e
 .upd span {{ font-size: 14px; color: var(--ink); }}
 .upd small {{ grid-column: 2; font-size: 12px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; }}
 .quiet {{ font-size: 15px; font-weight: 600; color: var(--muted); }}
-.more {{ display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1.5px dashed var(--nav-border); }}
-.pill {{ position: relative; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: var(--headline-ink); }}
-.pill .btn-svg {{ position: absolute; inset: -6px; pointer-events: none; }}
-.pill-in {{ position: relative; display: inline-block; padding: 9px 18px; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; color: #fff; background: var(--brand-blue); border-radius: 999px; }}
-.more-cap {{ font-size: 13px; font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; }}
+.more {{ display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 14px; padding-top: 12px; border-top: 1.5px dashed var(--nav-border); }}
+.pcoin {{ position: relative; width: 54px; height: 54px; border: 0; background: none; padding: 0; cursor: pointer; display: grid; place-items: center; flex: none; }}
+.pcoin:disabled {{ cursor: default; }}
+.pcoin .btn-svg {{ position: absolute; inset: 0; pointer-events: none; }}
+.pcoin .glyph {{ position: relative; width: 32px; height: 32px; }}
+.pcount {{ min-width: 64px; text-align: center; font-size: 15px; font-weight: 800; letter-spacing: 0.04em; color: var(--headline-ink); font-variant-numeric: tabular-nums; }}
+
 .foot {{ margin-top: 28px; font-size: 14px; font-weight: 600; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }}
 .foot a {{ color: var(--brand-blue); text-decoration: none; font-weight: 800; }}
 @media (max-width: 480px) {{ .page {{ padding: 24px 16px 64px; }} h1 {{ font-size: 26px; }} .banner-title {{ font-size: 20px; }} .days {{ gap: 2px; }} .upd {{ grid-template-columns: 1fr; padding-left: 0; }} .upd small {{ grid-column: 1; }} }}
@@ -187,23 +189,32 @@ function render() {
     });
     return h + '</div>';
   }
-  var PAGE = 7, MAXD = 30, shown = S.shownDays || PAGE, html = "";
-  for (var d = 0; d < Math.min(shown, MAXD); d++) html += dayBlock(d);
-  var box = document.getElementById("incidents"); box.innerHTML = html;
+  var PAGE = 7, MAXD = 30, pages = Math.ceil(MAXD / PAGE), page = Math.min(Math.max(S.page || 0, 0), pages - 1), html = "";
+  for (var d = page * PAGE; d < Math.min((page + 1) * PAGE, MAXD); d++) html += dayBlock(d);
+  document.getElementById("incidents").innerHTML = html;
+  // THE PAGER — a back coin and a forward coin in CoinBack's dress with the count between them; the coin
+  // with nowhere to go is ghosted, never hidden (a hidden control reads as a bug — the house rule)
   var more = document.getElementById("more");
-  if (shown < MAXD) {
-    var left = Math.min(PAGE, MAXD - shown);
-    more.innerHTML = '<button type="button" class="pill" data-seed="9777"><span class="btn-svg"></span><span class="pill-in">Show the week before</span></button><span class="more-cap">' + (shown) + ' of ' + MAXD + ' days shown</span>';
-    more.querySelector("button").addEventListener("click", function () { S.shownDays = shown + left; render(); });
-    sketch(more.querySelector(".pill"));
-  } else {
-    more.innerHTML = '<span class="more-cap">All ' + MAXD + ' days of history shown.</span>';
-  }
+  more.innerHTML = '<button type="button" class="pcoin" data-dir="-1" aria-label="Newer week"' + (page === 0 ? " disabled" : "") + '><span class="btn-svg"></span><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="' + CHEV_L + '" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
+    + '<span class="pcount">' + (page + 1) + ' of ' + pages + '</span>'
+    + '<button type="button" class="pcoin is-right" data-dir="1" aria-label="Older week"' + (page === pages - 1 ? " disabled" : "") + '><span class="btn-svg"></span><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true"><path d="' + CHEV_L + '" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(24 0) scale(-1 1)"/></svg></button>';
+  more.querySelectorAll(".pcoin").forEach(function (b) {
+    coinInto(b, "var(--brand-blue)", b.disabled);
+    b.addEventListener("click", function () { S.page = page + (+b.dataset.dir); render(); });
+  });
   document.querySelectorAll(".card.sk").forEach(sketch);
 }
 // CoinBack, as the Learn app draws it: a ghost coin at seed 9021 in the family yarn, the ring the yarn's 78%
 // dark variant, the chevron DoodleChevronLeft's own points at its own seed (9601, amp 0.35) in the 60% mark
 var CHEV_L = wobblePath([[14.6, 5.4], [11.2, 8.7], [7.8, 12], [11.2, 15.3], [14.6, 18.6]], 9601, 0.35);
+function coinInto(el, yarn, ghost) {
+  var ring = "color-mix(in srgb, " + yarn + " 78%, #000000)", box = 68, r = 26;
+  var fill = ghost ? "var(--coin-ghost)" : yarn, stroke = ghost ? "var(--nav-border)" : ring;
+  el.querySelector(".btn-svg").innerHTML = '<svg viewBox="0 0 ' + box + ' ' + box + '" aria-hidden="true" style="' + SVG_STYLE + '">'
+    + '<path d="' + jitterCircle(r, box, 9021 + 3, 1.3) + '" fill="' + fill + '" transform="translate(3.2 2.8)"/>'
+    + '<path d="' + jitterCircle(r, box, 9021, 1.6) + '" fill="none" stroke="' + stroke + '" stroke-width="2.6" stroke-linecap="round"/></svg>';
+  el.style.color = ghost ? "var(--divider-ink)" : "color-mix(in srgb, " + yarn + " 60%, #000000)";
+}
 function backInit() {
   var a = document.getElementById("back"), yarn = "var(--brand-blue)", ring = "color-mix(in srgb, " + yarn + " 78%, #000000)";
   var box = 68, r = 26;
