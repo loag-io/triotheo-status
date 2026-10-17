@@ -3,9 +3,15 @@ name: uptime
 # Probe triotheo.com from GitHub's runners and keep the status page's data (check.py).
 # Every 10 minutes — each run is a few seconds, and on a public repo the minutes are free.
 # The page itself is served by GitHub Pages from this branch, so it stays up when the box does not.
+#
+# OFF THE HOUR, ON PURPOSE (2026-10-17): the first schedule was "*/10", which fires at :00 — and
+# GitHub's docs say a schedule "can be delayed during periods of high loads … High load times
+# include the start of every hour. To decrease the chance of delay, schedule your workflow to run at
+# a different time of the hour." The first one never ran at all in 4.5 hours (the manual dispatch
+# always did). So the minutes are :04, :14, :24 … — the same cadence, never on the hour.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "4-59/10 * * * *"
   workflow_dispatch:
 
 permissions:
