@@ -32,6 +32,11 @@ jobs:
     timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
+        with:
+          # the branch as it is NOW, not as it was when this run was queued: a run that waited its turn behind
+          # another (the concurrency group) probed against stale data and could not save it (2026-10-17 04:14,
+          # three dispatches inside six seconds) — and a stale view of the last state can repeat an alert
+          ref: ${{ github.ref_name }}
 
       - name: Probe the site
         # stdlib only; writes status.json / history.json / incidents.json, and notify.txt only
@@ -62,4 +67,6 @@ jobs:
           git add status.json history.json incidents.json
           git diff --cached --quiet && { echo "nothing changed"; exit 0; }
           git commit -q -m "check: $(python3 -c "import json;s=json.load(open('status.json'));print(s['overall'],s['checked_at'])")"
-          git push
+          # anything that landed meanwhile (a page change pushed by hand) is rebased under this check, not refused
+          for try in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done
+          exit 1
