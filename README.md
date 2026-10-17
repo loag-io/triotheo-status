@@ -34,7 +34,15 @@ happened to be running. This repository is the answer to that.
 4. Optionally a custom domain: a `CNAME` file holding `status.triotheo.com` and a CNAME record at the
    registrar pointing `status` at `<owner>.github.io`. Until then the page is at
    `https://<owner>.github.io/<repo>/`.
-5. *Actions → uptime → Run workflow* once to seed the data; the schedule takes it from there.
+5. *Actions → uptime → Run workflow* once to seed the data.
+6. **The ten-minute trigger.** GitHub's own `schedule` is best-effort and on this repository never fired, so the
+   cadence comes from a free [cron-job.org](https://cron-job.org) job that POSTs the workflow's dispatch endpoint
+   every ten minutes — `https://api.github.com/repos/loag-io/triotheo-status/actions/workflows/uptime.yml/dispatches`,
+   body `{"ref":"main"}`, headers `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`,
+   `Content-Type: application/json` and `Authorization: Bearer <token>`. The token is a **fine-grained** personal
+   access token with access to **only this repository** and **only Actions: read and write**; it lives in the job
+   and nowhere else. A good call answers `204`; cron-job.org emails on a failure (an expired token shows up there
+   first). The workflow keeps an hourly `schedule` as a fallback. **Rotate the token before it expires.**
 
 ## Adding a probe
 

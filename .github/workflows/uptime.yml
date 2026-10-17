@@ -1,17 +1,22 @@
 name: uptime
 
 # Probe triotheo.com from GitHub's runners and keep the status page's data (check.py).
-# Every 10 minutes — each run is a few seconds, and on a public repo the minutes are free.
 # The page itself is served by GitHub Pages from this branch, so it stays up when the box does not.
 #
-# OFF THE HOUR, ON PURPOSE (2026-10-17): the first schedule was "*/10", which fires at :00 — and
-# GitHub's docs say a schedule "can be delayed during periods of high loads … High load times
-# include the start of every hour. To decrease the chance of delay, schedule your workflow to run at
-# a different time of the hour." The first one never ran at all in 4.5 hours (the manual dispatch
-# always did). So the minutes are :04, :14, :24 … — the same cadence, never on the hour.
+# WHAT RUNS IT, AND WHY NOT GITHUB'S SCHEDULE ALONE (2026-10-17). GitHub's `schedule` trigger is best-effort,
+# and on this repository it never fired at all: zero scheduled runs in five and a half hours, through "*/10"
+# and then the off-the-hour "4-59/10" GitHub's own docs recommend, while every manual dispatch ran at once.
+# So the ten-minute cadence comes from OUTSIDE: a cron-job.org job POSTs the workflow_dispatch endpoint
+#   POST https://api.github.com/repos/loag-io/triotheo-status/actions/workflows/uptime.yml/dispatches
+#   {"ref": "main"}   →   204 No Content
+# with a fine-grained token that can do one thing — Actions read/write on this repository and no other.
+# The token lives only in that job (never in this repo); cron-job.org emails the owner if a call fails.
+# The schedule below stays as an HOURLY fallback, should GitHub ever start honouring it. Not every ten
+# minutes: with both firing that often, Pages would build twelve times an hour, over its documented soft
+# limit of ten for branch-published sites.
 on:
   schedule:
-    - cron: "4-59/10 * * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
