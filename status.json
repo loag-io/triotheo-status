@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-19T16:00:13+00:00",
+ "checked_at": "2026-10-19T16:10:11+00:00",
  "overall": "up",
  "services": {
   "site": {
@@ -15,7 +15,7 @@
    "url": "https://triotheo.com/api/health",
    "state": "up",
    "ok_this_run": true,
-   "ms": 76,
+   "ms": 49,
    "note": ""
   },
   "lessons": {
@@ -23,7 +23,7 @@
    "url": "https://triotheo.com/learn/guess_who/guess-lazarus/manifest.json",
    "state": "up",
    "ok_this_run": true,
-   "ms": 52,
+   "ms": 59,
    "note": ""
   },
   "beta": {
