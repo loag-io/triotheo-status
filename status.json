@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-23T17:50:08+00:00",
+ "checked_at": "2026-10-23T18:00:11+00:00",
  "overall": "up",
  "services": {
   "site": {
@@ -7,7 +7,7 @@
    "url": "https://triotheo.com/",
    "state": "up",
    "ok_this_run": true,
-   "ms": 108,
+   "ms": 269,
    "note": ""
   },
   "api": {
@@ -15,7 +15,7 @@
    "url": "https://triotheo.com/api/health",
    "state": "up",
    "ok_this_run": true,
-   "ms": 80,
+   "ms": 297,
    "note": ""
   },
   "lessons": {
@@ -23,7 +23,7 @@
    "url": "https://triotheo.com/learn/guess_who/guess-lazarus/manifest.json",
    "state": "up",
    "ok_this_run": true,
-   "ms": 82,
+   "ms": 273,
    "note": ""
   },
   "beta": {
@@ -31,7 +31,7 @@
    "url": "https://beta.triotheo.com/",
    "state": "up",
    "ok_this_run": true,
-   "ms": 90,
+   "ms": 246,
    "note": ""
   }
  },
