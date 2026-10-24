@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-10-24T04:40:08+00:00",
+ "checked_at": "2026-10-24T04:50:07+00:00",
  "overall": "up",
  "services": {
   "site": {
@@ -7,7 +7,7 @@
    "url": "https://triotheo.com/",
    "state": "up",
    "ok_this_run": true,
-   "ms": 260,
+   "ms": 177,
    "note": ""
   },
   "api": {
@@ -23,7 +23,7 @@
    "url": "https://triotheo.com/learn/guess_who/guess-lazarus/manifest.json",
    "state": "up",
    "ok_this_run": true,
-   "ms": 154,
+   "ms": 132,
    "note": ""
   },
   "beta": {
@@ -31,7 +31,7 @@
    "url": "https://beta.triotheo.com/",
    "state": "up",
    "ok_this_run": true,
-   "ms": 288,
+   "ms": 152,
    "note": ""
   }
  },
